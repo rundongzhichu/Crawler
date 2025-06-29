@@ -13,7 +13,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # types=['ssq','kl8','3d','qlc']
 
-types=['kl8','3d','qlc']
+types=['ssq']
 sleep_time=2
 
 def processSsq(type:str, data:list):
@@ -94,6 +94,15 @@ for type in types:
     # 参数名字
     page_no=1
     page_size=30
+    # 表示查看最近一期的开奖记录
+    # issueCount=1
+    # 查找的期数范围
+    # issueStart = 2025067
+    # issueEnd = 2025072
+    # 查找的时间范围
+    # dayStart = "2025-06-29"
+    # dayEnd = "2025-06-29"
+
     # 请求地址
     url = f'https://www.cwl.gov.cn/cwl_admin/front/cwlkj/search/kjxx/findDrawNotice?name={type}&issueCount=&issueStart=&issueEnd=&dayStart=&dayEnd=&pageNo={page_no}&pageSize={page_size}&week=&systemType=PC'
 
@@ -112,7 +121,7 @@ for type in types:
     total_cnt = data['total']
 
     # 分页获取数据
-    for i in range(1, int(total_cnt/page_size + 1)):
+    for i in range(1, int(total_cnt/page_size + 2)):
         # 参数名字
         page_no = i
         url = f'https://www.cwl.gov.cn/cwl_admin/front/cwlkj/search/kjxx/findDrawNotice?name={type}&issueCount=&issueStart=&issueEnd=&dayStart=&dayEnd=&pageNo={i}&pageSize={page_size}&week=&systemType=PC'
