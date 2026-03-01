@@ -15,10 +15,10 @@ import os
 # 添加项目路径
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from super_lotto_crawler import SuperLottoCrawler
+from official_api_crawler import OfficialApiCrawler
 from lottery_analyzer import LotteryAnalyzer, create_analysis_visualizations
 from predictor import LotteryPredictor, evaluate_prediction_accuracy
-from dashboard import create_comprehensive_dashboard
+from dashboard import create_unified_dashboard
 
 # 配置日志
 logging.basicConfig(
@@ -34,10 +34,10 @@ logger = logging.getLogger(__name__)
 class LotterySystem:
     """大乐透彩票分析系统主类"""
     
-    def __init__(self, data_file: str = "super_lotto_history.xlsx"):
+    def __init__(self, data_file: str = "dlt_history.xlsx"):
         self.data_file = data_file
         self.df = None
-        self.crawler = None
+        self.crawler = OfficialApiCrawler()
         self.analyzer = None
         self.predictor = None
         
@@ -72,8 +72,6 @@ class LotterySystem:
         """爬取新的彩票数据"""
         logger.info("开始爬取大乐透数据...")
         
-        self.crawler = SuperLottoCrawler()
-        
         try:
             # 获取数据
             raw_data = self.crawler.fetch_all_history(max_pages)
@@ -83,7 +81,7 @@ class LotterySystem:
                 return False
             
             # 处理数据
-            new_df = self.crawler.process_super_lotto_data(raw_data)
+            new_df = self.crawler.process_official_data(raw_data)
             
             if new_df.empty:
                 logger.error("数据处理后为空")
@@ -201,18 +199,18 @@ class LotterySystem:
             return None
     
     def create_dashboard(self, predictions: list = None):
-        """创建可视化仪表板"""
+        """创建统一可视化报告"""
         if self.df is None or self.df.empty:
-            logger.error("没有数据可用于创建仪表板")
+            logger.error("没有数据可用于创建报告")
             return False
         
         try:
-            logger.info("创建综合可视化仪表板...")
-            create_comprehensive_dashboard(self.df, predictions)
-            print(f"\n📊 交互式仪表板已生成，请查看 dashboard 目录中的HTML文件")
+            logger.info("创建统一HTML分析报告...")
+            filename = create_unified_dashboard(self.df, predictions, "dlt_unified_report.html")
+            print(f"\n📊 统一分析报告已生成: {filename}")
             return True
         except Exception as e:
-            logger.error(f"仪表板创建过程中出现错误: {str(e)}")
+            logger.error(f"报告创建过程中出现错误: {str(e)}")
             return False
     
     def get_latest_result(self):
@@ -269,11 +267,11 @@ def main():
     parser.add_argument('--crawl', action='store_true', help='爬取最新数据')
     parser.add_argument('--analyze', action='store_true', help='执行数据分析')
     parser.add_argument('--predict', action='store_true', help='生成预测结果')
-    parser.add_argument('--dashboard', action='store_true', help='创建可视化仪表板')
+    parser.add_argument('--dashboard', action='store_true', help='创建统一可视化报告')
     parser.add_argument('--report', action='store_true', help='导出分析报告')
     parser.add_argument('--pages', type=int, default=5, help='爬取页数 (默认: 5)')
     parser.add_argument('--eval', action='store_true', help='评估预测准确性')
-    parser.add_argument('--data-file', default='super_lotto_history.xlsx', help='数据文件路径')
+    parser.add_argument('--data-file', default='dlt_history.xlsx', help='数据文件路径')
     
     args = parser.parse_args()
     
@@ -318,7 +316,7 @@ def show_interactive_menu(system):
         print("1. 🌐 爬取最新数据")
         print("2. 📊 执行数据分析")
         print("3. 🔮 生成预测结果")
-        print("4. 🎨 创建可视化仪表板")
+        print("4. 🎨 创建统一可视化报告")
         print("5. 📄 导出分析报告")
         print("6. ℹ️  查看最新开奖结果")
         print("0. 🚪 退出系统")

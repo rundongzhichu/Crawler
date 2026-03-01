@@ -7,7 +7,12 @@ import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 import warnings
+from lottery_analyzer import LotteryAnalyzer
 warnings.filterwarnings('ignore')
+
+# 设置英文字体
+plt.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans', 'sans-serif']
+plt.rcParams['axes.unicode_minus'] = False
 
 class LotteryVisualizer:
     """彩票数据可视化仪表板"""
@@ -16,9 +21,10 @@ class LotteryVisualizer:
         self.df = data_df.copy()
         self.red_ball_columns = ['red1', 'red2', 'red3', 'red4', 'red5']
         self.blue_ball_columns = ['blue1', 'blue2']
+        self.analyzer = LotteryAnalyzer(data_df)
         
-        # 设置中文字体支持
-        plt.rcParams['font.sans-serif'] = ['SimHei', 'Arial Unicode MS', 'DejaVu Sans']
+        # 设置英文字体支持
+        plt.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans', 'sans-serif']
         plt.rcParams['axes.unicode_minus'] = False
         
         # 设置绘图样式
@@ -376,54 +382,185 @@ class LotteryVisualizer:
                          title_text="彩票预测结果分析仪表板")
         return fig
 
-def create_comprehensive_dashboard(data_df: pd.DataFrame, predictions: list = None):
-    """创建完整的可视化仪表板"""
+
+def create_unified_dashboard(data_df: pd.DataFrame, predictions: list = None, filename: str = "dlt_analysis_report.html"):
+    """创建统一的HTML分析报告"""
     import os
-    
-    # 创建保存目录
-    save_dir = "lottery_dashboard"
-    os.makedirs(save_dir, exist_ok=True)
     
     visualizer = LotteryVisualizer(data_df)
     
+    # 创建HTML内容
+    html_content = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>DLT Analysis Report</title>
+        <meta charset="UTF-8">
+        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .section { margin: 30px 0; }
+            .section-title { color: #333; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+            .chart-container { width: 100%; height: 500px; margin: 20px 0; }
+            .summary-table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+            .summary-table th, .summary-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            .summary-table th { background-color: #f2f2f2; }
+        </style>
+    </head>
+    <body>
+        <h1>🎯 DLT Lottery Analysis Report</h1>
+        <div class="section">
+            <h2 class="section-title">📊 Data Summary</h2>
+    """
+    
+    # 添加数据摘要
+    total_records = len(data_df)
+    latest_issue = data_df.iloc[0]['issue'] if not data_df.empty else 'N/A'
+    latest_date = data_df.iloc[0]['date'] if not data_df.empty else 'N/A'
+    
+    html_content += f"""
+            <table class="summary-table">
+                <tr><th>Total Records</th><td>{total_records}</td></tr>
+                <tr><th>Latest Issue</th><td>{latest_issue}</td></tr>
+                <tr><th>Latest Date</th><td>{latest_date}</td></tr>
+            </table>
+        </div>
+    """
+    
     # 1. 仪表板概览
-    print("生成仪表板概览...")
+    print("Generating dashboard overview...")
     dashboard_fig = visualizer.create_dashboard_summary()
-    dashboard_fig.write_html(f"{save_dir}/dashboard_overview.html")
-    dashboard_fig.show()
+    dashboard_json = dashboard_fig.to_json()
     
-    # 2. 频率热力图
-    print("生成频率热力图...")
-    freq_fig = visualizer.create_frequency_heatmap()
-    freq_fig.savefig(f"{save_dir}/frequency_heatmap.png", dpi=300, bbox_inches='tight')
-    plt.show()
+    html_content += """
+        <div class="section">
+            <h2 class="section-title">📈 Dashboard Overview</h2>
+            <div id="dashboard-overview" class="chart-container"></div>
+        </div>
+    """
     
-    # 3. 趋势分析图
-    print("生成趋势分析图...")
-    trend_fig = visualizer.create_trend_analysis_plots()
-    trend_fig.savefig(f"{save_dir}/trend_analysis.png", dpi=300, bbox_inches='tight')
-    plt.show()
+    # 2. 频率分析
+    print("Generating frequency analysis...")
+    freq_data = visualizer.analyzer.get_number_frequency()
+    red_freq = freq_data['red_frequency']
+    blue_freq = freq_data['blue_frequency']
     
-    # 4. 分布对比图
-    print("生成分布对比图...")
-    dist_fig = visualizer.create_number_distribution_comparison()
-    dist_fig.savefig(f"{save_dir}/distribution_comparison.png", dpi=300, bbox_inches='tight')
-    plt.show()
+    # 创建频率图表
+    freq_fig = go.Figure()
+    freq_fig.add_trace(go.Bar(x=red_freq.index, y=red_freq.values, name='Red Balls', marker_color='red'))
+    freq_fig.add_trace(go.Bar(x=blue_freq.index, y=blue_freq.values, name='Blue Balls', marker_color='blue'))
+    freq_fig.update_layout(title='Number Frequency Distribution', xaxis_title='Numbers', yaxis_title='Frequency')
+    freq_json = freq_fig.to_json()
     
-    # 5. 相关性分析
-    print("生成相关性分析图...")
-    corr_fig = visualizer.create_correlation_analysis()
-    corr_fig.savefig(f"{save_dir}/correlation_analysis.png", dpi=300, bbox_inches='tight')
-    plt.show()
+    html_content += """
+        <div class="section">
+            <h2 class="section-title">🔢 Number Frequency Analysis</h2>
+            <div id="frequency-analysis" class="chart-container"></div>
+        </div>
+    """
     
-    # 6. 预测仪表板（如果有预测数据）
+    # 3. 热门冷门号码
+    print("Generating hot/cold numbers analysis...")
+    hot_cold_data = visualizer.analyzer.find_hot_and_cold_numbers(30)
+    hot_nums = list(hot_cold_data['hot_numbers'].keys())[:10]
+    hot_counts = list(hot_cold_data['hot_numbers'].values())[:10]
+    cold_nums = list(hot_cold_data['cold_numbers'].keys())[:10]
+    cold_counts = list(hot_cold_data['cold_numbers'].values())[:10]
+    
+    hot_cold_fig = make_subplots(rows=1, cols=2, subplot_titles=('Hot Numbers (Top 10)', 'Cold Numbers (Bottom 10)'))
+    hot_cold_fig.add_trace(go.Bar(x=hot_nums, y=hot_counts, name='Hot Numbers', marker_color='red'), row=1, col=1)
+    hot_cold_fig.add_trace(go.Bar(x=cold_nums, y=cold_counts, name='Cold Numbers', marker_color='blue'), row=1, col=2)
+    hot_cold_fig.update_layout(title='Hot and Cold Numbers Analysis')
+    hot_cold_json = hot_cold_fig.to_json()
+    
+    html_content += """
+        <div class="section">
+            <h2 class="section-title">🔥 Hot and Cold Numbers</h2>
+            <div id="hot-cold-analysis" class="chart-container"></div>
+        </div>
+    """
+    
+    # 4. 和值分布
+    print("Generating sum distribution...")
+    sum_stats = visualizer.analyzer.analyze_sum_statistics()
+    red_sums = []
+    for _, row in data_df.iterrows():
+        red_sum = sum(row[col] for col in visualizer.red_ball_columns if pd.notna(row[col]))
+        red_sums.append(red_sum)
+    
+    sum_fig = go.Figure()
+    sum_fig.add_trace(go.Histogram(x=red_sums, name='Red Ball Sums', nbinsx=30, marker_color='red'))
+    sum_fig.add_vline(x=sum_stats['red_sum_stats']['mean'], line_dash="dash", line_color="red", 
+                     annotation_text=f"Mean: {sum_stats['red_sum_stats']['mean']:.1f}")
+    sum_fig.update_layout(title='Red Ball Sum Distribution', xaxis_title='Sum Values', yaxis_title='Frequency')
+    sum_json = sum_fig.to_json()
+    
+    html_content += """
+        <div class="section">
+            <h2 class="section-title">🧮 Sum Distribution Analysis</h2>
+            <div id="sum-distribution" class="chart-container"></div>
+        </div>
+    """
+    
+    # 5. 预测结果（如果有）
     if predictions:
-        print("生成预测仪表板...")
+        print("Generating prediction analysis...")
         pred_fig = visualizer.create_interactive_prediction_dashboard(predictions)
-        pred_fig.write_html(f"{save_dir}/prediction_dashboard.html")
-        pred_fig.show()
+        pred_json = pred_fig.to_json()
+        
+        html_content += """
+        <div class="section">
+            <h2 class="section-title">🔮 Prediction Results</h2>
+            <div id="prediction-analysis" class="chart-container"></div>
+        </div>
+        """
+    else:
+        pred_json = None
     
-    print(f"所有可视化图表已保存到 {save_dir} 目录")
+    # 添加JavaScript
+    html_content += """
+        <script>
+            // Dashboard Overview
+            Plotly.newPlot('dashboard-overview', 
+                JSON.parse('""" + dashboard_json.replace('"', '\\"') + """')
+            );
+            
+            // Frequency Analysis
+            Plotly.newPlot('frequency-analysis',
+                JSON.parse('""" + freq_json.replace('"', '\\"') + """')
+            );
+            
+            // Hot/Cold Numbers
+            Plotly.newPlot('hot-cold-analysis',
+                JSON.parse('""" + hot_cold_json.replace('"', '\\"') + """')
+            );
+            
+            // Sum Distribution
+            Plotly.newPlot('sum-distribution',
+                JSON.parse('""" + sum_json.replace('"', '\\"') + """')
+            );
+    """
+    
+    if pred_json:
+        html_content += f"""
+            // Prediction Analysis
+            Plotly.newPlot('prediction-analysis',
+                JSON.parse('""" + pred_json.replace('"', '\\"') + """')
+            );
+        """
+    
+    html_content += """
+        </script>
+    </body>
+    </html>
+    """
+    
+    # 保存HTML文件
+    with open(filename, 'w', encoding='utf-8') as f:
+        f.write(html_content)
+    
+    print(f"✅ Unified dashboard saved to: {filename}")
+    return filename
 
 def main():
     """测试可视化功能"""

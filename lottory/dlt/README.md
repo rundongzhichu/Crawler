@@ -2,9 +2,25 @@
 
 这是一个完整的彩票分析和预测系统，专门针对中国体育彩票大乐透玩法设计。
 
+## 🎉 最新更新 - 官方API支持
+
+**重大升级！** 系统现已支持国家体育总局彩票中心官方API数据源，提供更权威、更实时的数据服务。
+
+- ✅ 新增 `official_api_crawler.py` - 官方API专用爬虫
+- ✅ 完整的命令行和交互式支持
+- ✅ 丰富的测试脚本确保稳定性
+- ✅ 与原有系统的无缝集成
+
 ## 🌟 系统特性
 
-- **数据爬取**: 自动从官方网站获取历史开奖数据
+### 🚀 官方API数据源（推荐）
+- **权威可靠**: 使用国家体育总局彩票中心官方接口
+- **实时更新**: 获取最新的开奖数据和奖池信息
+- **数据丰富**: 包含奖金详情、销售金额等完整信息
+- **稳定高效**: 专业的API接口，高可用性保障
+
+### 📊 核心功能
+- **数据爬取**: 自动获取历史开奖数据（支持官方API和传统API）
 - **统计分析**: 深度分析号码频率、分布规律和趋势
 - **智能预测**: 基于机器学习和统计学的多重预测算法
 - **可视化展示**: 丰富的图表和交互式仪表板
@@ -14,12 +30,13 @@
 
 ```
 lottory/
-├── super_lotto_crawler.py    # 数据爬虫模块
+├── official_api_crawler.py   # 官方API数据爬虫模块 (唯一)
 ├── lottery_analyzer.py       # 数据分析模块
 ├── predictor.py             # 预测算法模块
-├── dashboard.py             # 可视化仪表板
+├── dashboard.py             # 统一可视化报告生成器
 ├── main_system.py           # 主应用程序
-├── test_system.py           # 系统测试脚本
+├── test_official_api.py     # 官方API测试脚本
+├── example_usage.py         # 使用示例
 ├── requirements.txt         # 依赖包列表
 └── README.md               # 说明文档
 ```
@@ -32,10 +49,11 @@ lottory/
 pip install -r requirements.txt
 ```
 
-### 2. 测试系统
+### 2. 测试官方API爬虫（推荐第一步）
 
 ```bash
-python test_system.py
+# 测试官方API连接和数据获取
+python test_official_api.py
 ```
 
 ### 3. 运行系统
@@ -47,7 +65,7 @@ python main_system.py
 
 #### 命令行模式
 ```bash
-# 爬取数据
+# 爬取数据（使用官方API）
 python main_system.py --crawl --pages 10
 
 # 数据分析
@@ -56,20 +74,22 @@ python main_system.py --analyze
 # 生成预测
 python main_system.py --predict
 
-# 创建仪表板
+# 创建统一HTML报告
 python main_system.py --dashboard
 
-# 导出报告
+# 导出分析报告
 python main_system.py --report
 ```
 
 ## 📊 功能详解
 
-### 数据爬虫 (super_lotto_crawler.py)
-- 自动获取大乐透历史开奖数据
-- 支持分页爬取和断点续传
-- 数据清洗和标准化处理
-- Excel格式数据存储
+### 数据爬虫 (official_api_crawler.py) 🔥
+- 使用国家体育总局彩票中心官方API
+- 接口地址: `https://webapi.sporttery.cn/gateway/lottery/getHistoryPageListV1.qry`
+- 更稳定可靠的数据源
+- 包含完整的开奖信息和奖金数据
+- 支持获取奖池金额、销售金额等附加信息
+- 英文界面显示
 
 ### 统计分析 (lottery_analyzer.py)
 - 号码频率统计分析
@@ -87,13 +107,12 @@ python main_system.py --report
 - 混合投票预测
 - 预测准确性回测
 
-### 可视化仪表板 (dashboard.py)
-- 交互式数据概览
-- 频率热力图
-- 趋势分析图表
-- 分布对比图
-- 相关性分析
-- 预测结果可视化
+### 统一可视化报告 (dashboard.py)
+- 所有分析结果整合到单一HTML文件
+- 交互式图表展示
+- 英文界面显示
+- 包含数据摘要、频率分析、热门冷门号码、和值分布等
+- 预测结果可视化展示
 
 ## 🎯 使用示例
 
@@ -142,6 +161,20 @@ predictor = LotteryPredictor(df)
 predictor.train_prediction_models()
 predictions = predictor.generate_multiple_predictions(3)
 ```
+
+## 🎯 官方API特色功能
+
+### 新增数据字段
+- **奖池金额**: pool_amount
+- **销售金额**: sales_amount  
+- **奖项详情**: 各等奖的奖金和中奖人数
+- **完整开奖时间**: 精确到秒的时间戳
+
+### 数据质量优势
+- ✅ 官方权威数据源
+- ✅ 实时更新
+- ✅ 数据完整性高
+- ✅ 格式标准化
 
 ## 📈 输出结果
 
